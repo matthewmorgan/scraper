@@ -12,6 +12,9 @@ def scrape(url='https://academiccommons.columbia.edu/catalog/ac:205534'):
 
     results = {}
 
+    title = soup.find('h1', itemprop='name')
+    results['title'] = title.text
+
     for dt in keys:
         key = dt.text.strip()
         if (key == 'Author(s):'):
@@ -30,4 +33,4 @@ def scrape(url='https://academiccommons.columbia.edu/catalog/ac:205534'):
             span = dt.find_next_sibling('dd').span
             results[key] = span.text if span else ''
 
-    return json.dumps(results)
+    return results

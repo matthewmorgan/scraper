@@ -1,4 +1,4 @@
 .idea
 __pycache__
-scraped_json.txt
+*scraped_json.txt
 followed-and-found.html

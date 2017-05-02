@@ -1,26 +1,24 @@
 import json
+import boto3
 
 from datetime import datetime
 
 from bs4 import BeautifulSoup
 from urllib import request
 
-from scraper import scrape
+from columbia_scraper import scrape
 
 
 def crawl(url='https://academiccommons.columbia.edu/catalog/browse/subjects'):
-        return crawl_subjects(url)
+    return crawl_subjects(url)
 
 
-# find all links below id in entry point, store in list
 def crawl_subjects(url='https://academiccommons.columbia.edu/catalog/browse/subjects'):
-    r = request.urlopen(url).read()
+    r = request.urlopen(url, timeout=10).read()
     soup = BeautifulSoup(r, "html.parser")
-
     links = soup.find('div', id='browse-box').find_all('a', href=True)
 
-    print('At {url}, found {num} category links.'.format(url=url, num=len(links)))
-
+    print('At {url}, found {num} subject links.'.format(url=url, num=len(links)))
     return links
 
 
@@ -31,20 +29,29 @@ def follow_subject_link(link, base_url='https://academiccommons.columbia.edu'):
     r = request.urlopen(link_url, timeout=10).read()
     soup = BeautifulSoup(r, "html.parser")
     document_link_spans = soup.find_all('span', itemprop='url')
-
+    print('following subject link {}'.format(link.text))
+    print('-- scraping {num} document link(s)'.format(num=len(document_link_spans)))
     return [span.a['href'] for span in document_link_spans]
 
 
 def follow_document_link(link_url):
-    if not link_url:
-        return []
-    return scrape(link_url)
+    return scrape(link_url) if link_url else []
 
 
-def test_follow_link():
-    return follow_document_link(link_url=follow_subject_link(link=crawl()[0])[0])
+def copy_to_s3(bucket='ithaka-labs-data', filename='columbia_scraped_json.txt'):
+    print('Copying local {filename} to s3 {bucket}'.format(filename=filename, bucket=bucket))
+    s3 = boto3.resource('s3')
+    s3.Bucket(bucket).put_object(Key=filename, Body=open(filename, 'rb'))
 
-def test_follow_links(num=2):
+    
+def write_to_local(results, filename='columbia_scraped_json.txt'):
+    print('Writing results to local file {}'.format(filename))
+    results = results or []
+    with open(filename, 'w') as outfile:
+        json.dump(results, outfile)
+
+
+def follow_links(num=1):
     start = datetime.now()
     subject_links = crawl()[:num]
     results = []
@@ -59,7 +66,7 @@ def test_follow_links(num=2):
     return results
 
 
-def test_with_write(num=2):
-    results = test_follow_links(num)
-    with open('scraped_json.txt', 'w') as outfile:
-        json.dump(results, outfile)
+def crawl_with_write(num=2):
+    results = follow_links(num)
+    write_to_local(results)
+    copy_to_s3()
