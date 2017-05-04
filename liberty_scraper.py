@@ -42,6 +42,7 @@ def scrape(url='http://digitalcommons.liberty.edu/honors/615/'):
                 url.startswith('http://digitalcommons.liberty.edu/bio_chem_fac_pubs'),
                 url.startswith('http://digitalcommons.liberty.edu/eml_undergrad_schol'),
                 url.startswith('http://digitalcommons.liberty.edu/nurse_grad_fac_pubs'),
+                url.startswith('http://digitalcommons.liberty.edu/nurse_grad_proj_schol'),
         ]
     ):
         print('!!! Unrecognized endpoint pattern {}'.format(url))

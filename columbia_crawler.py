@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from urllib import request
 
 from columbia_scraper import scrape
+from columbia_mapper import map
 
 
 def crawl(url='https://academiccommons.columbia.edu/catalog/browse/subjects'):
@@ -69,5 +70,6 @@ def follow_links(num=1):
 
 def crawl_with_write(num=2):
     results = follow_links(num)
-    write_to_local(results)
+    mapped_results = [map(result) for result in results]
+    write_to_local(mapped_results)
     copy_to_s3()

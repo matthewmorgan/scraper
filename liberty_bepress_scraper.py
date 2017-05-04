@@ -6,7 +6,7 @@ def scrape(url='http://digitalcommons.liberty.edu/honors/615/'):
     if not url.startswith('https://works.bepress.com'):
         print('!!! Unrecognized endpoint pattern {}'.format(url))
         return
-    
+
     print('Attempting to scrape url {}'.format(url))
     r = request.urlopen(url, timeout=30).read()
     soup = BeautifulSoup(r, "html.parser")
@@ -22,7 +22,7 @@ def scrape(url='http://digitalcommons.liberty.edu/honors/615/'):
 
     title = soup.find('div', class_='work-details-title').text
     results['title'] = title
-    
+
     partial_url = soup.find('div', class_='work-details-actions').find('div').find('div').find('a')['href']
     results['url'] = 'https://works.bepress.com{}'.format(partial_url)
 
