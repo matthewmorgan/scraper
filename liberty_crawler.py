@@ -48,8 +48,9 @@ def follow_discipline_link(link, base_url='http://digitalcommons.liberty.edu'):
 def follow_document_link(link_url):
     try:
         scraped_data = scrape(link_url) if link_url else []
-    except Exception:
-        print('Exception following link {link} {Exception}'.format(link=link_url, Exception=Exception))
+    except Exception as ex:
+        print('Exception following link {link}'.format(link=link_url))
+        print(ex)
         return []
     return scraped_data
 

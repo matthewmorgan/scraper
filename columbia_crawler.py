@@ -27,19 +27,25 @@ def follow_subject_link(link, base_url='https://academiccommons.columbia.edu'):
     if not link:
         return []
     link_url = '{base_url}{link_href}'.format(base_url=base_url, link_href=link['href'])
-    r = request.urlopen(link_url, timeout=10).read()
-    soup = BeautifulSoup(r, "html.parser")
-    document_link_spans = soup.find_all('span', itemprop='url')
-    print('following subject link {}'.format(link.text))
-    print('-- scraping {num} document link(s)'.format(num=len(document_link_spans)))
-    return [span.a['href'] for span in document_link_spans]
+    try:
+        r = request.urlopen(link_url, timeout=10).read()
+        soup = BeautifulSoup(r, "html.parser")
+        document_link_spans = soup.find_all('span', itemprop='url')
+        print('following subject link {}'.format(link.text))
+        print('-- scraping {num} document link(s)'.format(num=len(document_link_spans)))
+        return [span.a['href'] for span in document_link_spans]
+    except Exception as ex:
+        print('Exception following subject link {}'.format(link_url))
+        print(ex)
+        return []
 
 
 def follow_document_link(link_url):
     try:
         scraped_data = scrape(link_url) if link_url else []
-    except Exception:
-        print('Exception following link {link} {Exception}'.format(link=link_url, Exception=Exception))
+    except Exception as ex:
+        print('Exception following link {link}'.format(link=link_url))
+        print(ex)
         return []
     return scraped_data
 
