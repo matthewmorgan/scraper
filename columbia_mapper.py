@@ -24,10 +24,10 @@ def map_json(raw):
     Year of publication:  year - integer
     """
 
-    raw_date = raw.get('Date', "")
+    raw_date = raw.get('Date:', "")
     date_settings = {'TIMEZONE': 'UTC', 'PREFER_DAY_OF_MONTH': 'first', 'RETURN_AS_TIMEZONE_AWARE': True}
-    publication_date = dateparser.parse(raw_date, settings=date_settings).isoformat()
-    publisher = raw.get('Suggested Citation', "")
+    publication_date = dateparser.parse(raw_date, settings=date_settings)
+    publisher = raw.get('Suggested Citation:', "")
     if publisher and len(publisher.split(', ')) >= 4:
         publisher = publisher.split(', ')[3]
 
@@ -36,23 +36,23 @@ def map_json(raw):
         doi = doi.split("hdl.handle.net/")[1]
 
     return {
-        "abstract": raw.get('Abstract', ""),
+        "abstract": raw.get('Abstract:', ""),
         "advisor": [],
-        "author": raw.get('Author(s)', []),
-        "citation": raw.get('Suggested Citation', ""),
-        "department": raw.get('Departments', []),
-        "discipline": raw.get('Subject(s)', []),
+        "author": raw.get('Author(s):', []),
+        "citation": raw.get('Suggested Citation:', ""),
+        "department": raw.get('Department(s):', []),
+        "discipline": raw.get('Subject(s):', []),
         "doi": doi,
-        "keyword": raw.get('Subject(s)', []),
+        "keyword": raw.get('Subject(s):', []),
         "note": [],
-        "pdf": raw.get('Persistent URL', ""),
-        "pubdate": publication_date.__str__().replace('+00:00', 'Z'),
+        "pdf": raw.get('Persistent URL:', ""),
+        "pubdate": publication_date.isoformat().replace('+00:00', 'Z'),
         "publisher":  publisher,
         "series": "",
         "source": "columbia",
-        "stable_url": raw.get('Persistent URL', ""),
-        "subject": raw.get('Subject(s)', []),
-        "title": raw.get("Title", ""),
-        "type": raw.get("Type", ""),
+        "stable_url": raw.get('Persistent URL:', ""),
+        "subject": raw.get('Subject(s):', []),
+        "title": raw.get("Title:", ""),
+        "type": raw.get("Type:", ""),
         "year": publication_date.year
     }

@@ -1,4 +1,8 @@
 .idea
+
 __pycache__
+*.pyc
+
 *scraped_json.txt
 followed-and-found.html
+
