@@ -9,36 +9,38 @@ from urllib import request
 from liberty_scraper import scrape
 
 
+subdiscipline_links = []
+
+
 def crawl(url='http://digitalcommons.liberty.edu/do/discipline_browser/disciplines'):
-    return crawl_subjects(url)
+    return list(set(crawl_page(url)))
 
 
-def crawl_subjects(url='http://digitalcommons.liberty.edu/do/discipline_browser/disciplines'):
-    r = request.urlopen(url, timeout=10).read()
+def crawl_page(url, works_links=None):
+    print('Crawling link {url}'.format(url=url))
+    r = request.urlopen(url, timeout=30).read()
     soup = BeautifulSoup(r, "html.parser")
-    dd_tags = soup.find('div', id='discipline-browser').find_all('dd', class_='articles')
+    subdiscipline_dd_tags = soup.find_all('dd', class_='sub-discipline')
+    works_tags = soup.find_all('dd', class_='articles')
 
-    print('At {url}, found {num} discipline links.'.format(url=url, num=len(dd_tags)))
-    return dd_tags
+    works_links = works_links or []
+    works_links.extend([works_tag.a['href'] for works_tag in works_tags])
+    while subdiscipline_dd_tags:
+        tag = subdiscipline_dd_tags.pop()
+        crawl_page('http://digitalcommons.liberty.edu{}'.format(tag.a['href']), works_links)
+    return works_links
 
 
-def extract_subject_link(dd_tag):
-    return {
-        'href': dd_tag.a['href']
-    }
-
-
-def follow_subject_link(link, base_url='http://digitalcommons.liberty.edu'):
+def follow_discipline_link(link, base_url='http://digitalcommons.liberty.edu'):
     if not link:
         return []
-    link_url = '{base_url}{link_href}'.format(base_url=base_url, link_href=link['href'])
-    print('trying to follow subject link {}'.format(link_url))
-    r = request.urlopen(link_url, timeout=10).read()
+    link_url = '{base_url}{link_href}'.format(base_url=base_url, link_href=link)
+    print('trying to follow discipline link {link}: {link_url}'.format(link_url=link_url, link=link))
+    r = request.urlopen(link_url, timeout=30).read()
     soup = BeautifulSoup(r, "html.parser")
     document_divs = soup.find_all('div', class_='entry')
-    print('following subject link {}'.format(link_url))
+    print('following discipline link {}'.format(link_url))
     print('-- scraping {num} document link(s)'.format(num=len(document_divs)))
-    print(document_divs)
     return [div.p.a['href'] for div in document_divs]
 
 
@@ -54,22 +56,25 @@ def copy_to_s3(bucket='ithaka-labs-data', filename='liberty_scraped_json.txt'):
 
 def write_to_local(results, filename='liberty_scraped_json.txt'):
     print('Writing results to local file {}'.format(filename))
-    results = list(filter(lambda r: r is not None, results)) if results else []
     with open(filename, 'w') as outfile:
         json.dump(results, outfile)
 
 
 def follow_links(num=1):
     start = datetime.now()
-    discipline_dd_tags = crawl()[:num]
+    works_links = crawl()
+    print('Total number of works links found: {}'.format(len(works_links)))
     results = []
 
-    for discipline_tag in discipline_dd_tags:
-        document_links = follow_subject_link(extract_subject_link(discipline_tag))
+    for works_link in works_links:
+        document_links = follow_discipline_link(works_link)
         for document_link in document_links:
             results.append(follow_document_link(document_link))
 
-    print('Processing {num} links took {time}.'.format(num=num, time=datetime.now() - start))
+    print('Total results count before filtering out nulls: {}'.format(len(results)))
+    results = list(filter(lambda r: bool(r), results)) if results else []
+
+    print('Processing {num} discipline links took {time}.'.format(num=num, time=datetime.now() - start))
     print('Number of individual documents in results: {num_results}.'.format(num_results=len(results)))
     return results
 
@@ -77,4 +82,4 @@ def follow_links(num=1):
 def crawl_with_write(num=2):
     results = follow_links(num)
     write_to_local(results)
-    # copy_to_s3()
+    copy_to_s3()

@@ -61,6 +61,7 @@ def follow_links(num=1):
         for document_link in document_links:
             results.append(follow_document_link(document_link))
 
+    results = list(filter(lambda r: bool(r), results)) if results else []
     print('Processing {num} links took {time}.'.format(num=num, time=datetime.now() - start))
     print('Number of individual documents in results: {num_results}.'.format(num_results=len(results)))
     return results
