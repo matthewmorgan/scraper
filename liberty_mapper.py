@@ -26,7 +26,7 @@ def map_json(raw):
 
     raw_date = raw.get('publication-date', raw.get('publication_date', ""))
     date_settings = {'TIMEZONE': 'UTC', 'PREFER_DAY_OF_MONTH': 'first', 'RETURN_AS_TIMEZONE_AWARE': True}
-    publication_date = dateparser.parse(raw_date, settings=date_settings)
+    publication_date = dateparser.parse(raw_date, settings=date_settings).isoformat()
 
     keywords = raw.get('keywords', raw.get('bp_categories', []))
     disciplines = raw.get('disciplines', []) or raw.get('bp_categories', [])
@@ -43,7 +43,7 @@ def map_json(raw):
         "keyword": keywords,
         "note": [],
         "pdf": raw.get('url', ""),
-        "pubdate": '{}Z'.format(publication_date.__str__().replace('+', 'Z')),
+        "pubdate": publication_date.__str__().replace('+00:00', 'Z'),
         "publisher": "",
         "series": "",
         "source": "liberty",

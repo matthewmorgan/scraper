@@ -26,7 +26,7 @@ def map_json(raw):
 
     raw_date = raw.get('Date', "")
     date_settings = {'TIMEZONE': 'UTC', 'PREFER_DAY_OF_MONTH': 'first', 'RETURN_AS_TIMEZONE_AWARE': True}
-    publication_date = dateparser.parse(raw_date, settings=date_settings)
+    publication_date = dateparser.parse(raw_date, settings=date_settings).isoformat()
     publisher = raw.get('Suggested Citation', "")
     if publisher and len(publisher.split(', ')) >= 4:
         publisher = publisher.split(', ')[3]
@@ -46,7 +46,7 @@ def map_json(raw):
         "keyword": raw.get('Subject(s)', []),
         "note": [],
         "pdf": raw.get('Persistent URL', ""),
-        "pubdate": '{}Z'.format(publication_date.__str__().replace('+', 'Z')),
+        "pubdate": publication_date.__str__().replace('+00:00', 'Z'),
         "publisher":  publisher,
         "series": "",
         "source": "columbia",
