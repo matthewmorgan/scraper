@@ -46,7 +46,12 @@ def follow_discipline_link(link, base_url='http://digitalcommons.liberty.edu'):
 
 
 def follow_document_link(link_url):
-    return scrape(link_url) if link_url else []
+    try:
+        scraped_data = scrape(link_url) if link_url else []
+    except Exception:
+        print('Exception following link {link} {Exception}'.format(link=link_url, Exception=Exception))
+        return []
+    return scraped_data
 
 
 def copy_to_s3(bucket='ithaka-labs-data', filename='liberty_scraped_json.txt'):
@@ -61,7 +66,7 @@ def write_to_local(results, filename='liberty_scraped_json.txt'):
         json.dump(results, outfile)
 
 
-def follow_links(num=1):
+def follow_links():
     start = datetime.now()
     works_links = crawl()
     print('Total number of works links found: {}'.format(len(works_links)))
@@ -75,13 +80,13 @@ def follow_links(num=1):
     print('Total results count before filtering out nulls: {}'.format(len(results)))
     results = list(filter(lambda r: bool(r), results)) if results else []
 
-    print('Processing {num} discipline links took {time}.'.format(num=num, time=datetime.now() - start))
+    print('Processing {num} discipline links took {time}.'.format(num=len(works_links), time=datetime.now() - start))
     print('Number of individual documents in results: {num_results}.'.format(num_results=len(results)))
     return results
 
 
-def crawl_with_write(num=2):
-    results = follow_links(num)
+def crawl_with_write():
+    results = follow_links()
     mapped_results = [map_json(result) for result in results]
     write_to_local(mapped_results)
     copy_to_s3()

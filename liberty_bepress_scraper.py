@@ -3,10 +3,6 @@ from urllib import request
 
 
 def scrape(url='http://digitalcommons.liberty.edu/honors/615/'):
-    if not url.startswith('https://works.bepress.com'):
-        print('!!! Unrecognized endpoint pattern {}'.format(url))
-        return
-
     print('Attempting to scrape url {}'.format(url))
     r = request.urlopen(url, timeout=30).read()
     soup = BeautifulSoup(r, "html.parser")
@@ -23,8 +19,13 @@ def scrape(url='http://digitalcommons.liberty.edu/honors/615/'):
     title = soup.find('div', class_='work-details-title').text
     results['title'] = title
 
-    partial_url = soup.find('div', class_='work-details-actions').find('div').find('div').find('a')['href']
-    results['url'] = 'https://works.bepress.com{}'.format(partial_url)
+    partial_url_link = soup.find('div', class_='work-details-actions').find('div').find('div').find('a')
+    if partial_url_link:
+        results['url'] = 'https://works.bepress.com{}'.format(partial_url_link['href'])
+    else:
+        results['url'] = ''
+
+
 
     author_lis = soup.find('div', class_='authors').find('ul').find_all('li')
     results['authors'] = [author_li.span.text for author_li in author_lis]
@@ -32,7 +33,7 @@ def scrape(url='http://digitalcommons.liberty.edu/honors/615/'):
     for key_div in key_divs:
         key_class = key_div['class']
         if key_class == ['abstract']:
-            results['abstract'] = key_div.find('div', class_='line').text
+            results['abstract'] = key_div.text
         if key_class == ['keywords']:
             keyword_lis = key_div.find('ul').find_all('li')
             results['keywords'] = [keyword_li.text for keyword_li in keyword_lis]

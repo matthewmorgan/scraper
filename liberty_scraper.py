@@ -7,7 +7,10 @@ from liberty_bepress_scraper import scrape as scrape_bepress
 
 def scrape(url='http://digitalcommons.liberty.edu/honors/615/'):
     # only process endpoints we know how to scrape
-    if url.startswith('https://works.bepress.com/'):
+    if any([
+        url.startswith('http://works.bepress.com/'),
+        url.startswith('https://works.bepress.com/')
+    ]):
         return scrape_bepress(url)
     
     if not any([
