@@ -1,7 +1,7 @@
 import dateparser
 
 
-def map(raw):
+def map_json(raw):
     """
     Abstract:  abstract – string
     Advisors:  advisor – string array
