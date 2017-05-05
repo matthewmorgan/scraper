@@ -1,5 +1,4 @@
 import json
-import boto3
 
 from datetime import datetime
 
@@ -8,9 +7,7 @@ from urllib import request
 
 from liberty_scraper import scrape
 from liberty_mapper import map_json
-
-
-subdiscipline_links = []
+from json_file_handler import copy_to_s3, write_to_local
 
 
 def crawl(url='http://digitalcommons.liberty.edu/do/discipline_browser/disciplines'):
@@ -55,18 +52,6 @@ def follow_document_link(link_url):
     return scraped_data
 
 
-def copy_to_s3(bucket='ithaka-labs-data', filename='liberty_scraped_json.txt'):
-    print('Copying local {filename} to s3 {bucket}'.format(filename=filename, bucket=bucket))
-    s3 = boto3.resource('s3')
-    s3.Bucket(bucket).put_object(Key=filename, Body=open(filename, 'rb'))
-
-
-def write_to_local(results, filename='liberty_scraped_json.txt'):
-    print('Writing results to local file {}'.format(filename))
-    with open(filename, 'w') as outfile:
-        json.dump(results, outfile)
-
-
 def follow_links():
     start = datetime.now()
     works_links = crawl()
@@ -88,6 +73,7 @@ def follow_links():
 
 def crawl_with_write():
     results = follow_links()
+    write_to_local(data=results, filename='unmapped_liberty_scraped_json.txt')
     mapped_results = [map_json(result) for result in results]
-    write_to_local(mapped_results)
-    copy_to_s3()
+    write_to_local(data=mapped_results, filename='liberty_scraped_json.txt')
+    copy_to_s3(filename='liberty_scraped_json.txt')

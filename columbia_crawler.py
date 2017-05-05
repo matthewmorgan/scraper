@@ -1,6 +1,3 @@
-import json
-import boto3
-
 from datetime import datetime
 
 from bs4 import BeautifulSoup
@@ -8,6 +5,7 @@ from urllib import request
 
 from columbia_scraper import scrape
 from columbia_mapper import map_json
+from json_file_handler import copy_to_s3, write_to_local
 
 
 def crawl(url='https://academiccommons.columbia.edu/catalog/browse/subjects'):
@@ -22,16 +20,23 @@ def crawl_subjects(url='https://academiccommons.columbia.edu/catalog/browse/subj
     print('At {url}, found {num} subject links.'.format(url=url, num=len(links)))
     return links
 
-
-def follow_subject_link(link, base_url='https://academiccommons.columbia.edu'):
+    
+def follow_subject_link(link=None, base_url='https://academiccommons.columbia.edu', document_link_spans=None):
     if not link:
         return []
     link_url = '{base_url}{link_href}'.format(base_url=base_url, link_href=link['href'])
+    print('following subject link {} {}'.format(link.text, link['href']))
+    document_link_spans = document_link_spans or []
     try:
         r = request.urlopen(link_url, timeout=10).read()
         soup = BeautifulSoup(r, "html.parser")
-        document_link_spans = soup.find_all('span', itemprop='url')
-        print('following subject link {}'.format(link.text))
+        document_link_spans.extend(soup.find_all('span', itemprop='url'))
+
+        next_page = soup.find('a', class_='next_page')
+
+        if next_page:
+            return follow_subject_link(link=next_page, document_link_spans=document_link_spans)
+
         print('-- scraping {num} document link(s)'.format(num=len(document_link_spans)))
         return [span.a['href'] for span in document_link_spans]
     except Exception as ex:
@@ -48,19 +53,6 @@ def follow_document_link(link_url):
         print(ex)
         return []
     return scraped_data
-
-
-def copy_to_s3(bucket='ithaka-labs-data', filename='columbia_scraped_json.txt'):
-    print('Copying local {filename} to s3 {bucket}'.format(filename=filename, bucket=bucket))
-    s3 = boto3.resource('s3')
-    s3.Bucket(bucket).put_object(Key=filename, Body=open(filename, 'rb'))
-
-    
-def write_to_local(results, filename='columbia_scraped_json.txt'):
-    print('Writing results to local file {}'.format(filename))
-    results = results or []
-    with open(filename, 'w') as outfile:
-        json.dump(results, outfile)
 
 
 def follow_links():
@@ -81,6 +73,7 @@ def follow_links():
 
 def crawl_with_write():
     results = follow_links()
+    write_to_local(data=results, filename='unmapped_columbia_scraped_json.txt')
     mapped_results = [map_json(result) for result in results]
-    write_to_local(mapped_results)
-    copy_to_s3()
+    write_to_local(data=mapped_results, filename='columbia_scraped_json.txt')
+    copy_to_s3(filename='columbia_scraped_json.txt')

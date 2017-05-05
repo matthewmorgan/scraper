@@ -4,7 +4,13 @@ from bs4 import BeautifulSoup
 from urllib import request
 
 
+scraped_urls = set()
+
+
 def scrape(url='https://academiccommons.columbia.edu/catalog/ac:205534'):
+    if url in scraped_urls:
+        return []
+
     r = request.urlopen(url, timeout=10).read()
     soup = BeautifulSoup(r, "html.parser")
 
@@ -39,4 +45,5 @@ def scrape(url='https://academiccommons.columbia.edu/catalog/ac:205534'):
             span = dt.find_next_sibling('dd').span
             results[key] = span.text if span else ''
 
+    scraped_urls.add(url)
     return results
